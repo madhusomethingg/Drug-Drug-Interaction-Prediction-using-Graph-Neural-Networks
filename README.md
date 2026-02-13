@@ -1,10 +1,10 @@
-Drug–Drug Interaction Prediction using PyTorch Geometric
+**Drug–Drug Interaction Prediction using PyTorch Geometric**
 
 Course: MSML610 – Advanced Machine Learning
+
 Semester: Fall 2025
+
 Tool: PyTorch Geometric
-Project Type: Class Project Tutorial
-Difficulty Level: Hard
 
 1. Project Motivation and Background
 
@@ -76,8 +76,6 @@ The project follows a clean and modular structure consistent with the course tut
 
 The project directory is organized as follows:
 
-class_project/MSML610/Fall2025/projects/
-└── UmdTask23_Fall2025_PyTorch_Geometric_Drug_Drug_Interaction_Prediction/
     ├── README.md
     ├── Dockerfile
     ├── db_drug_interactions.csv
