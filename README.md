@@ -1,8 +1,5 @@
 **Drug–Drug Interaction Prediction using PyTorch Geometric**
 
-Course: MSML610 – Advanced Machine Learning
-
-Semester: Fall 2025
 
 Tool: PyTorch Geometric
 
@@ -152,3 +149,4 @@ This project demonstrates how graph-based deep learning can be applied to real-w
 15. Conclusion
 
 This project presents an end-to-end system for drug–drug interaction prediction using PyTorch Geometric. By modeling drugs as graphs and applying graph neural networks, the system captures structural information that traditional methods cannot. The resulting model is flexible, interpretable, and well-aligned with modern data science and machine learning practices.
+
