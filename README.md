@@ -1,152 +1,166 @@
-**Drug–Drug Interaction Prediction using PyTorch Geometric**
+# 💊 Drug–Drug Interaction Prediction using Graph Neural Networks
+### Learning Molecular Structure to Predict Dangerous Drug Combinations
 
+> An end-to-end GNN pipeline that models drugs as molecular graphs and uses Graph Attention Networks to predict whether two drugs will interact — with interpretability via GNNExplainer and self-supervised pretraining as a bonus extension.
 
-Tool: PyTorch Geometric
+---
 
-1. Project Motivation and Background
+## 📌 Overview
 
-Drug–Drug Interactions (DDIs) occur when one drug alters the effect of another drug, potentially leading to adverse side effects or reduced therapeutic efficacy. Detecting such interactions early is an important problem in healthcare and pharmaceutical research. Many traditional machine learning approaches represent drugs as fixed feature vectors, which limits their ability to capture the rich structural information present in molecular compounds.
+When two drugs interact badly, the consequences can range from reduced effectiveness to life-threatening side effects. Catching these interactions early — before they reach patients — is one of the most important open problems in pharmaceutical research.
 
-This project addresses this limitation by modeling drugs as graphs and applying Graph Neural Networks using PyTorch Geometric. Since molecules are naturally structured as graphs composed of atoms and chemical bonds, graph-based learning provides a more faithful representation of drug behavior. The project is designed as a hands-on tutorial that demonstrates how PyTorch Geometric can be used in a realistic end-to-end machine learning workflow.
+Most traditional approaches represent drugs as fixed feature vectors (Morgan fingerprints), which can't capture the rich structural information in a molecule. This project takes a different approach: model each drug as a graph, where atoms are nodes and chemical bonds are edges, and let a Graph Attention Network learn what matters directly from molecular structure.
 
-2. Project Objective
+| Goal | Approach |
+|---|---|
+| Predict drug–drug interactions from molecular structure | Graph Attention Network (GAT) on molecular graphs |
+| Capture structural information lost in flat feature vectors | PyTorch Geometric — atoms as nodes, bonds as edges |
+| Benchmark against traditional cheminformatics | Morgan fingerprints + Logistic Regression baseline |
+| Make predictions interpretable | GNNExplainer highlights key atoms and bonds |
+| Improve representations using unlabeled data | Self-supervised contrastive pretraining |
 
-The primary objective of this project is to predict whether a given pair of drugs will interact based on their molecular structures. Each drug is represented as a graph, and a Graph Attention Network is used to learn expressive molecular embeddings. These embeddings are then combined to perform binary classification, indicating whether an interaction exists between the two drugs.
+---
 
-Beyond prediction accuracy, the project also emphasizes interpretability, modular system design, reproducibility, and comparison with traditional machine learning baselines.
+## 📂 Dataset
 
-3. Why PyTorch Geometric is Used
+**Drug–Drug Interaction Dataset**  
+Source: Kaggle
 
-PyTorch Geometric is a deep learning framework built on top of PyTorch that is specifically designed for graph-structured data. It provides efficient abstractions for message passing, graph batching, and neighborhood aggregation, which are difficult to implement correctly using standard tensor-based libraries.
+- **File:** `db_drug_interactions.csv`
+- **Format:** Drug pairs with binary interaction labels
+- **Notes:** Dataset is naturally imbalanced — ROC-AUC and Precision-Recall AUC are used as primary metrics rather than accuracy
 
-In molecular machine learning tasks, PyTorch Geometric enables direct modeling of atoms as nodes and bonds as edges. This allows the model to learn from molecular structure without relying on manually engineered features, making it particularly suitable for drug interaction prediction.
+---
 
-4. Dataset Description
+## 🔧 Tech Stack
 
-The project uses a Drug–Drug Interaction dataset obtained from Kaggle. The dataset contains pairs of drugs along with binary labels indicating whether the drugs interact. Each drug is associated with molecular structure information that is used to construct graph representations.
+| Category | Libraries / Tools |
+|----------|-----------|
+| Graph Learning | `PyTorch Geometric` |
+| Deep Learning | `PyTorch` |
+| Cheminformatics | `RDKit` |
+| Data Manipulation | `pandas`, `numpy` |
+| Visualization | `matplotlib` |
+| Reproducibility | `Docker` |
 
-The dataset is naturally imbalanced, which makes evaluation metrics such as ROC-AUC and Precision-Recall AUC more appropriate than simple accuracy.
+---
 
-5. Graph Representation of Drugs
+## 🗂️ Repository Structure
 
-Each drug molecule is converted into a graph where nodes represent atoms and edges represent chemical bonds. Node features encode atomic properties, while edges capture bonding relationships. This graph representation preserves the relational and structural properties of molecules, allowing the model to reason about how different substructures contribute to drug interactions.
+```
+├── Drug_API.ipynb              # API layer — internal interfaces and abstractions
+├── Drug_API.md                 # API documentation
+├── Drug_example.ipynb          # End-to-end walkthrough notebook
+├── Drug_example.md             # Example documentation
+├── Drug_utils.py               # Core model, training, and evaluation logic
+├── utils_data_io.py            # Data loading and graph construction
+├── utils_post_processing.py    # Evaluation and results processing
+├── run_nb.py                   # Script to run notebooks programmatically
+├── db_drug_interactions.csv    # Dataset
+├── Dockerfile                  # Reproducible environment
+└── README.md
+```
 
-6. Model Architecture
+---
 
-The core model used in this project is a Graph Attention Network (GAT). The GAT applies attention mechanisms during message passing, allowing the model to assign different importance weights to neighboring atoms. This is particularly important in chemistry, where certain atoms or functional groups play a larger role in determining molecular behavior.
+## 🔬 Methodology
 
-Each drug graph is passed through a shared GAT encoder to produce a fixed-length embedding. The embeddings of two drugs are then combined and passed through a classifier to predict whether the drugs interact.
+### 1. Graph Representation of Drugs
 
-7. Training and Evaluation Strategy
+Each drug molecule is converted into a graph:
+- **Nodes** = atoms (with atomic property features)
+- **Edges** = chemical bonds (capturing bonding relationships)
 
-The model is trained using supervised learning with binary cross-entropy loss. Performance is evaluated using ROC-AUC and Precision-Recall AUC metrics, which are well-suited for imbalanced datasets.
+This preserves structural and relational information that flat fingerprint vectors discard entirely.
 
-The training pipeline is modular, separating data loading, graph construction, model definition, training, and evaluation into reusable components.
+### 2. Model Architecture — Graph Attention Network (GAT)
 
-8. Comparison with Traditional Machine Learning Baseline
+The GAT applies attention during message passing, learning to assign different importance weights to neighboring atoms. This is crucial in chemistry — certain atoms and functional groups matter far more than others for determining drug behavior.
 
-As a baseline, the project implements a traditional cheminformatics approach using Morgan fingerprints combined with logistic regression. This baseline is commonly used in drug interaction tasks and provides a strong point of comparison.
+Each drug graph passes through a **shared GAT encoder** → produces a fixed-length molecular embedding → embeddings of the two drugs are combined → binary classifier predicts interaction.
 
-While the baseline achieves reasonable performance, it relies on fixed, hand-engineered features. In contrast, the graph-based model learns task-specific representations directly from molecular structure, making it more flexible and extensible.
+> **Key Design Choice:** Sharing the encoder across both drugs forces the model to learn a universal molecular representation rather than drug-pair-specific features — making it more generalizable.
 
-9. Why the Graph Neural Network Model is Better
+### 3. Baseline Comparison
 
-The graph-based model offers several advantages over traditional approaches. First, it operates directly on molecular graphs, preserving structural information that is lost in flattened feature vectors. Second, the attention mechanism enables the model to focus on chemically important atoms and substructures. Third, the learned representations adapt during training, whereas traditional fingerprints remain static.
+| Approach | Representation | Features |
+|----------|---------------|---------|
+| **Logistic Regression** | Morgan fingerprints | Fixed, hand-engineered |
+| **GAT (this project)** | Molecular graph | Learned from structure |
 
-Even when evaluation metrics are comparable, the graph neural network provides superior interpretability and a stronger foundation for future extensions.
+The baseline achieves reasonable performance but relies on static features. The GNN learns task-specific representations that adapt during training.
 
-10. Model Interpretability using GNNExplainer
+### 4. Model Interpretability — GNNExplainer
 
-To improve transparency, the project includes model interpretability using GNNExplainer. This method identifies which atoms and bonds contribute most strongly to a predicted interaction. By highlighting important substructures, the model’s predictions become more understandable and trustworthy.
+GNNExplainer identifies which atoms and bonds contributed most strongly to a predicted interaction — surfacing the molecular substructures driving each decision. In healthcare applications, this kind of transparency isn't just nice to have; it's essential.
 
-Interpretability is particularly important in healthcare applications, where model decisions must be explainable.
+### 5. Self-Supervised Pretraining *(Bonus)*
 
-11. Self-Supervised Pretraining (Bonus Component)
+The graph encoder is pretrained using a contrastive learning objective on augmented molecular graphs — without using any interaction labels. This teaches the model robust molecular representations from unlabeled chemical data before fine-tuning on the interaction task.
 
-As an additional enhancement, the project includes a self-supervised pretraining step using a contrastive learning objective. The graph encoder is pretrained on augmented molecular graphs without using interaction labels. This allows the model to learn more robust molecular representations from unlabeled data.
+> **Key Finding:** Pretrained models show consistent improvement in ROC-AUC over training from scratch — demonstrating that unlabeled chemical data contains useful structural signal.
 
-After fine-tuning on the interaction prediction task, the pretrained model shows a consistent improvement in ROC-AUC, demonstrating the benefit of leveraging unlabeled chemical data.
+---
 
-12. Project Structure
+## 📊 Key Results
 
-The project follows a clean and modular structure consistent with the course tutorial template. All reusable logic is implemented in Python utility modules, while notebooks focus on documentation, experimentation, and results. The separation between API and example layers ensures clarity and maintainability.
+- GAT outperforms the Morgan fingerprint + Logistic Regression baseline on ROC-AUC and Precision-Recall AUC
+- Self-supervised pretraining provides consistent ROC-AUC improvement over training from scratch
+- GNNExplainer successfully highlights chemically meaningful substructures driving interaction predictions
+- Modular pipeline cleanly separates data loading, graph construction, model definition, training, and evaluation
 
-The project directory is organized as follows:
+---
 
-    ├── README.md
-    ├── Dockerfile
-    ├── db_drug_interactions.csv
-    ├── Drug_utils.py
-    ├── utils_data_io.py
-    ├── utils_post_processing.py
-    ├── Drug_API.ipynb
-    ├── Drug_API.md
-    ├── Drug_example.ipynb
-    └── Drug_example.md
+## ⚠️ Limitations
 
+- Dataset is imbalanced — performance on minority (interacting) class is the harder and more important challenge
+- GAT attention weights offer local interpretability but don't always align with known pharmacological mechanisms
+- Pretraining augmentations are synthetic — real unlabeled molecular databases would provide stronger signal
+- Evaluated on a single dataset; generalization to other DDI benchmarks is untested
 
-The utility files contain reusable functions for data loading, graph construction, model definition, training, and evaluation. The API files document the internal interfaces and abstractions built on top of PyTorch Geometric. The example files demonstrate a complete end-to-end application of the system.
+---
 
-13. Docker and Reproducibility
+## 🔮 Future Work
 
-Step 1: Build the Docker Image
+- **Larger pretraining corpora** — pretrain on PubChem or ChEMBL for richer molecular representations
+- **Edge features** — incorporate bond type, bond order, and ring membership as edge attributes
+- **Multi-relational DDI** — predict the *type* of interaction (e.g., increased toxicity, reduced efficacy) not just whether one exists
+- **Graph Transformer architectures** — explore more expressive message passing schemes beyond GAT
+- **Clinical validation** — compare model predictions against known DDI databases like DrugBank
 
-From the project root directory (where the Dockerfile is located), run:
+---
 
+## 🚀 Getting Started
+
+**Option 1 — Docker (recommended for full reproducibility)**
+```bash
+# Build the image
 docker build -t drug-ddi-project .
 
-
-This command:
-
-Installs all required Python packages
-
-Sets up RDKit, PyTorch, and PyTorch Geometric
-
-Prepares the environment for running the project
-
-Step 2: Run the Docker Container
-
-After the image is built successfully, run:
-
+# Run the container
 docker run -it --rm drug-ddi-project
 
-
-This will:
-
-Start the container
-
-Execute the project in the configured environment
-
-Run the pipeline exactly as intended by the project setup
-
-Optional: Running with Jupyter Notebook
-
-If you want to interact with the notebook inside Docker, you can expose a port:
-
+# Run with Jupyter access
 docker run -it -p 8888:8888 drug-ddi-project
+```
 
+**Option 2 — Local**
+```bash
+pip install torch torch-geometric rdkit pandas numpy matplotlib
+```
 
-Then open the Jupyter URL printed in the terminal in your browser.
+1. Open `Drug_example.ipynb` for a full end-to-end walkthrough
+2. Core model and training logic lives in `Drug_utils.py`
+3. Graph construction utilities are in `utils_data_io.py`
 
-Notes on Reproducibility
+---
 
-Docker ensures that the same versions of libraries are used across different systems
+## 👤 Author
 
-This avoids issues related to local environment differences
+Madhumitha Rajagopal
 
-The project can be run consistently on any machine that supports Docker
+---
 
-Common Issues
+## 📄 License
 
-If Docker reports permission errors, ensure Docker is running and your user has access
-
-If the dataset is missing, Docker will raise an error indicating the file path
-
-14. Learning Outcomes
-
-This project demonstrates how graph-based deep learning can be applied to real-world problems. It shows how PyTorch Geometric integrates into modern machine learning workflows and highlights the advantages of graph neural networks over traditional approaches in molecular prediction tasks.
-
-15. Conclusion
-
-This project presents an end-to-end system for drug–drug interaction prediction using PyTorch Geometric. By modeling drugs as graphs and applying graph neural networks, the system captures structural information that traditional methods cannot. The resulting model is flexible, interpretable, and well-aligned with modern data science and machine learning practices.
-
+This project is for educational and research purposes.
